@@ -1,6 +1,27 @@
 package com.example.wjz.tesseract3;
+import android.Manifest;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 
-/*import android.Manifest;
+import org.opencv.core.*;
+import org.opencv.imgproc.Imgproc;
+
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.Utils;
+import android.app.Activity;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.Menu;
+import android.view.WindowManager;
+import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+import android.os.Bundle;
+import android.util.Log;
+
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -16,81 +37,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.googlecode.tesseract.android.TessBaseAPI;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-public class MainActivity extends AppCompatActivity {
-
-    Button button;
-    Bitmap bitmap;
-    String result;
-    ImageView imgView;
-    TextView txtView;
-
-    //读写权限
-    private static String[] PERMISSIONS_STORAGE = {
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE};
-    //请求状态码
-    private static int REQUEST_PERMISSION_CODE = 1;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        //读写权限
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_PERMISSION_CODE);
-            }
-        }
-
-        button = findViewById(R.id.btnShot);
-        imgView = this.findViewById(R.id.imageView);
-        txtView = this.findViewById(R.id.idCard_textView);
-        bitmap = BitmapFactory.decodeResource(this.getResources(), R.mipmap.pictureocr);//识别图片源
-        imgView.setImageBitmap(bitmap);
-
-        Bitmap_to_string bitmap_to_string = new Bitmap_to_string();
-        bitmap_to_string.assets2SD(getApplicationContext(),Environment.getExternalStorageDirectory().getAbsolutePath() + "/tesseract/tessdata/" + "eng.traineddata","eng.traineddata");
-
-        result=bitmap_to_string.Bitmap_to_string(bitmap);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                txtView.setText("结果为:" + result);
-            }
-        });
-    }
-}*/
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
-
-import org.opencv.core.*;
-import org.opencv.imgproc.Imgproc;
-
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.android.BaseLoaderCallback;
-
-import android.app.Activity;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.Menu;
-import android.view.WindowManager;
-import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
-import android.os.Bundle;
-import android.util.Log;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -113,7 +59,7 @@ import java.util.List;
 
 
 
-public class MainActivity extends Activity implements CvCameraViewListener2{
+public class MainActivity extends AppCompatActivity implements CvCameraViewListener2{
 
     private static final String TAG = "OpenCameraActivity";
 
@@ -129,9 +75,25 @@ public class MainActivity extends Activity implements CvCameraViewListener2{
     private Mat mGray;
     private Mat mGuss;
     private Mat mThreshould;
+
+
+    //private Button button;
+    //private Button button2;
+    //private static int Cstate=0;
+    Bitmap bitmap;
+    String result;
+    ImageView imgView;
+    TextView txtView;
+
     //  private Mat inter;
     private CameraBridgeViewBase mOpenCvCameraView;
 
+    //读写权限
+    private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE};
+    //请求状态码
+    private static int REQUEST_PERMISSION_CODE = 1;
     public MainActivity() {
 
         Log.i(TAG, "Instantiated new " + this.getClass());
@@ -145,10 +107,14 @@ public class MainActivity extends Activity implements CvCameraViewListener2{
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_main);
-
-
-        //initView();
-        //enter.setOnClickListener(this);
+        //读写权限
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_PERMISSION_CODE);
+            }
+        }
+        //button = findViewById(R.id.btnShot);
+        txtView = this.findViewById(R.id.idCard_textView);
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
         mOpenCvCameraView.enableView();//
@@ -157,11 +123,6 @@ public class MainActivity extends Activity implements CvCameraViewListener2{
         //FRONT 前置摄像头 CAMERA_ID_BACK为后置摄像头
 
     }
-    /* private void initView(){
-         input=(EditText)findViewById(R.id.input);
-         enter=(Button)findViewById(R.id.enter);
-     }*/
-
 
     @Override
     public void onPause() {
@@ -200,10 +161,26 @@ public class MainActivity extends Activity implements CvCameraViewListener2{
         // Core.flip(mRgba, mFlipRgba, 1);
         // Core.flip(mFlipRgba, mFlipRgba, 1);
         //inter = new Mat(mRgba.width(), mRgba.height(), CvType.CV_8UC4);
-        Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
-        Imgproc.GaussianBlur(mGray,mGuss, new Size(5,5), 0);
-        Imgproc.threshold(mGuss,mThreshould,0,255,Imgproc.THRESH_BINARY+Imgproc.THRESH_OTSU);
-        return mThreshould;
+     //   Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
+       // Imgproc.GaussianBlur(mGray,mGuss, new Size(5,5), 0);
+        //Imgproc.threshold(mGuss,mThreshould,0,255,Imgproc.THRESH_BINARY+Imgproc.THRESH_OTSU);
+
+       if(mRgba!=null){
+           bitmap=Bitmap.createBitmap(mRgba.cols(),mRgba.rows(),Bitmap.Config.ARGB_8888);
+           if(bitmap!=null)
+               Utils.matToBitmap(mRgba,bitmap);
+       }
+
+        Bitmap_to_string bitmap_to_string = new Bitmap_to_string();
+        bitmap_to_string.assets2SD(getApplicationContext(),Environment.getExternalStorageDirectory().getAbsolutePath() + "/tesseract/tessdata/" + "eng.traineddata","eng.traineddata");
+        result=bitmap_to_string.Bitmap_to_string(bitmap);
+        if(result!=null){
+            txtView.setText("结果为:" + result);
+        }
+        //System.out.println(result);
+       // txtView.setText("结果为:" + result);
+        return mRgba;
+       // return mThreshould;
         //     return mGuss;
     }
 
